@@ -56,8 +56,11 @@ func NewResolver(ttl time.Duration, dnsServers []string) *Resolver {
 					idx := atomic.AddUint32(&resolver.serverIndex, 1) - 1
 					server := dnsServers[int(idx)%len(dnsServers)] + defaultDNSPort
 
-					dialer := &net.Dialer{Timeout: dnsTimeout}
-					conn, err := dialer.DialContext(ctx, "udp", server)
+					dialCtx, dialCancel := context.WithTimeout(context.Background(), dnsTimeout)
+					dialer := &net.Dialer{}
+					conn, err := dialer.DialContext(dialCtx, "udp", server)
+					dialCancel()
+
 					if err == nil {
 						return conn, nil
 					}
